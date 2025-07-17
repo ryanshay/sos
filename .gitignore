@@ -1,3 +1,15 @@
 .claude
 CLAUDE.md
 .idea
+composer.lock
+.DS_Store
+vendor/
+examples/*.html
+examples/*.wav
+examples/*.mp3
+examples/*.png
+examples/*.svg
+examples/*.json
+examples/*.csv
+examples/*.txt
+.phpunit.cache/

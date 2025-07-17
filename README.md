@@ -12,6 +12,7 @@ A comprehensive PHP library for translating between text and Morse code with sup
   - [Audio Generation](#audio-generation)
   - [Visual Representations](#visual-representations)
   - [Blinking Light Patterns](#blinking-light-patterns)
+  - [Govee Smart Light Control](#govee-smart-light-control)
   - [Data Export](#data-export)
   - [Error Handling](#error-handling)
 - [Supported Characters](#supported-characters)
@@ -30,6 +31,7 @@ A comprehensive PHP library for translating between text and Morse code with sup
 - **Audio Generation**: Create WAV audio files with configurable speed and tone
 - **Visual Representations**: Generate images (PNG, JPEG, GIF) and SVG files showing Morse patterns
 - **Blinking Patterns**: Real-time terminal flashing and HTML/JavaScript animations
+- **Smart Light Control**: Control Govee smart lights over LAN to blink Morse code patterns
 - **Data Export**: Export timing data in JSON, CSV, or Arduino-compatible formats
 - **Error Handling**: Comprehensive exception handling with configurable behavior
 - **Character Support**: Letters (A-Z), numbers (0-9), common punctuation marks
@@ -38,10 +40,11 @@ A comprehensive PHP library for translating between text and Morse code with sup
 ## Use Cases
 
 - **Education**: Teaching Morse code with visual and audio aids
-- **Emergency Signaling**: Generate SOS patterns in multiple formats
+- **Emergency Signaling**: Generate SOS patterns in multiple formats including smart lights
 - **Amateur Radio**: Practice tools for ham radio operators
 - **Accessibility**: Alternative communication methods
 - **Hardware Projects**: Arduino/Raspberry Pi integration
+- **Smart Home Integration**: Control Govee lights for notifications and alerts
 - **Web Applications**: Embed Morse code features in websites
 - **Mobile Apps**: Backend for Morse code mobile applications
 - **Historical Preservation**: Demonstrate historical communication methods
@@ -67,6 +70,10 @@ echo $morse; // .... . .-.. .-.. --- / .-- --- .-. .-.. -..
 
 $text = $translator->morseToText('... --- ...');
 echo $text; // SOS
+
+// IMPORTANT: Set output directory before generating any files
+$translator->setOutputDirectory('/path/to/output');
+$translator->setMaxFileSize(52428800); // Optional: 50MB default
 ```
 
 ## Detailed Usage Examples
@@ -107,6 +114,9 @@ use SOS\Translator\AudioGenerator;
 
 $translator = new Translator();
 
+// REQUIRED: Set output directory first
+$translator->setOutputDirectory('./output');
+
 // Simple audio generation
 $translator->generateAudioFile('SOS', 'sos.wav');
 
@@ -131,6 +141,9 @@ use SOS\Translator\Translator;
 use SOS\Translator\VisualGenerator;
 
 $translator = new Translator();
+
+// REQUIRED: Set output directory first
+$translator->setOutputDirectory('./output');
 
 // Generate PNG image
 $translator->generateVisualFile('SOS', 'sos.png');
@@ -188,6 +201,9 @@ use SOS\Translator\BlinkPatternGenerator;
 
 $translator = new Translator();
 
+// REQUIRED: Set output directory first
+$translator->setOutputDirectory('./output');
+
 // Generate HTML with blinking animation
 $translator->generateBlinkPattern('HELLO', 'hello.html');
 
@@ -201,12 +217,87 @@ $blinkGen->setIncludeControls(false);       // Auto-play only
 $translator->generateBlinkPattern('SOS', 'emergency.html', $blinkGen);
 ```
 
+### Govee Smart Light Control
+
+Control Govee smart lights over your local network to display Morse code patterns.
+
+#### Prerequisites
+
+1. Govee smart light that supports LAN control
+2. Enable "LAN Control" in the Govee Home app:
+   - Open Govee Home app
+   - Go to your device settings
+   - Enable "LAN Control" option
+3. Computer and Govee device on the same network
+
+#### Basic Usage
+
+```php
+use SOS\Translator\Translator;
+use SOS\Translator\GoveeController;
+
+$controller = new GoveeController();
+
+// Discover devices on the network
+$devices = $controller->discoverDevices();
+
+if (!empty($devices)) {
+    // Select the first device
+    $controller->selectDevice(0);
+    
+    // Or select by IP address
+    // $controller->selectDeviceByIp('192.168.1.100');
+    
+    $translator = new Translator();
+    $translator->blinkOnGoveeLight('SOS', $controller);
+}
+```
+
+#### Advanced Configuration
+
+```php
+// Configure colors (RGB values)
+$controller->setColors(
+    [255, 0, 0],    // Red for "on" state
+    [0, 0, 0]       // Off for "off" state
+);
+
+// Set speed
+$controller->setSpeed(15); // 15 WPM for emergency
+
+// Set brightness
+$controller->setBrightness(100); // Maximum brightness
+
+// Emergency signaling example
+$controller->setColors([255, 0, 0]); // Red light
+$controller->setBrightness(100);
+$controller->setSpeed(15);
+
+$translator->blinkOnGoveeLight('SOS HELP', $controller);
+```
+
+#### Device Discovery
+
+```php
+// Discover all Govee devices
+$devices = $controller->discoverDevices();
+
+foreach ($devices as $device) {
+    echo "Device: " . $device['device'] . "\n";
+    echo "IP: " . $device['ip'] . "\n";
+    echo "Model: " . $device['sku'] . "\n";
+}
+```
+
 ### Data Export
 
 ```php
 use SOS\Translator\Translator;
 
 $translator = new Translator();
+
+// REQUIRED: Set output directory first
+$translator->setOutputDirectory('./output');
 
 // Export as JSON
 $translator->generateBlinkPattern('TEST', 'timings.json');
@@ -288,6 +379,33 @@ A-Z (case-insensitive)
 ### Special
 - Space (word separator in Morse: /)
 
+## File Output Configuration
+
+### Security Requirements
+
+For security reasons, all file generation methods require setting an output directory:
+
+```php
+$translator = new Translator();
+
+// REQUIRED before generating any files
+$translator->setOutputDirectory('/path/to/safe/output');
+
+// Optional: Set maximum file size (default 50MB)
+$translator->setMaxFileSize(104857600); // 100MB
+
+// Now you can generate files safely
+$translator->generateAudioFile('HELLO', 'hello.wav');
+$translator->generateVisualFile('HELLO', 'hello.png');
+$translator->generateBlinkPattern('HELLO', 'hello.html');
+```
+
+**Security Features:**
+- Path traversal protection (filenames are sanitized)
+- Output directory validation (must exist and be writable)
+- File size limits to prevent resource exhaustion
+- All files are contained within the specified directory
+
 ## Configuration Options
 
 ### Audio Generator
@@ -308,6 +426,12 @@ A-Z (case-insensitive)
 - **Colors**: Hex color codes
 - **Controls**: Optional play/pause/speed controls
 
+### Govee Controller
+- **Speed**: 5-60 WPM
+- **Brightness**: 1-100%
+- **Colors**: RGB arrays for on/off states
+- **Network**: UDP ports 4001-4003
+
 ## Class Structure
 
 ### Main Classes
@@ -315,9 +439,12 @@ A-Z (case-insensitive)
 - **`Translator`** - Core translation class with integration methods
   - `textToMorse($text)` - Convert text to Morse code
   - `morseToText($morse)` - Convert Morse code to text
+  - `setOutputDirectory($directory)` - Set output directory for file generation (REQUIRED)
+  - `setMaxFileSize($bytes)` - Set maximum file size limit (default 50MB)
   - `generateAudioFile($text, $filename, $audioGenerator)` - Create audio file
   - `generateVisualFile($text, $filename, $visualGenerator)` - Create image/SVG
   - `blinkInTerminal($text, $options)` - Terminal flashing
+  - `blinkOnGoveeLight($text, $controller)` - Control Govee smart lights
   - `generateBlinkPattern($text, $filename, $generator)` - Create HTML/data files
   - `exportBlinkTimings($text, $format)` - Export timing data
 
@@ -339,6 +466,12 @@ A-Z (case-insensitive)
   - Self-contained HTML with JavaScript
   - JSON, CSV, and Arduino code export
   - Configurable appearance and controls
+
+- **`GoveeController`** - Govee smart light control
+  - Device discovery via UDP multicast
+  - LAN-based control (no cloud required)
+  - Configurable colors, brightness, and timing
+  - Support for multiple devices
 
 ### Exception Classes
 
@@ -364,6 +497,8 @@ The library includes comprehensive examples:
 - `terminal-blink.php` - Terminal flashing demonstrations
 - `blink-pattern.php` - HTML pattern generation
 - `emergency-signal.php` - Emergency signaling example
+- `govee-morse.php` - Govee smart light control for Morse code
+- `govee-discovery.php` - Discover Govee devices on the network
 - `error-handling.php` - Exception handling examples
 - `text-to-audio.php` - Complete text to audio workflow
 - `text-to-visual.php` - Complete text to visual workflow
@@ -400,12 +535,4 @@ vendor/bin/phpunit
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Author
-
-RCS - ryancshay@gmail.com
+MIT License
