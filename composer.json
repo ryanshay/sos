@@ -1,5 +1,5 @@
 {
-    "name": "rshay/sos",
+    "name": "ryanshay/sos",
     "description": "A PHP library for translating between Natural Language and Morse code. Supports audio, visual, and blink translations.",
     "type": "library",
     "keywords": ["morse", "morse-code", "translator", "audio", "visual", "blink", "emergency", "sos"],
