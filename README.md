@@ -54,7 +54,7 @@ A comprehensive PHP library for translating between text and Morse code with sup
 Install via Composer:
 
 ```bash
-composer require rshay/sos
+composer require ryanshay/sos
 ```
 
 ## Quick Start
